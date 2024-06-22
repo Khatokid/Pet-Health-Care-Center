@@ -4,11 +4,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { auth } from "../../Components/firebase/firebase";
 import Box from "@mui/material/Box";
 import Rating from "@mui/material/Rating";
-import Typography from "@mui/material/Typography";
 
 const BookingDetails = () => {
   const { bookingId } = useParams();
   const [booking, setBooking] = useState(null);
+  const [medicalRecord, setMedicalRecord] = useState(null);
   const user = auth.currentUser;
   const navigate = useNavigate();
   const [value, setValue] = React.useState(null);
@@ -28,6 +28,15 @@ const BookingDetails = () => {
           const bookingData = snapshot.val();
           setBooking(bookingData);
           setValue(bookingData.rating); // Set the rating value from the booking data
+
+          // Fetch medical record data
+          const medicalRecordRef = ref(db, `users/${user.uid}/bookings/${bookingId}/medicalRecord`);
+          const medicalRecordSnapshot = await get(medicalRecordRef);
+          if (medicalRecordSnapshot.exists()) {
+            setMedicalRecord(medicalRecordSnapshot.val());
+          } else {
+            console.log("No medical record available");
+          }
         } else {
           console.log("No data available");
         }
@@ -43,8 +52,7 @@ const BookingDetails = () => {
     return <p>Loading booking details...</p>;
   }
 
-  const { pet, vet, date, time, services, totalPaid, amountToPay, status } =
-    booking;
+  const { pet, vet, date, time, services, totalPaid, status } = booking;
   const petName = pet?.name || "N/A";
   const vetName = vet?.name || "N/A";
 
@@ -64,6 +72,25 @@ const BookingDetails = () => {
           <h2>Booking Details</h2>
           <table className="booking-details-table">
             <tbody>
+            {medicalRecord && (
+                <tr>
+                  <td className="key-column">Medical Record</td>
+                  <td className="value-column">
+                    <table>
+                      <tbody>
+                        {Object.entries(medicalRecord).map(([key, value]) => (
+                          key !== 'date' && ( 
+                          <tr key={key}>
+                            <td className="key-column">{key}</td>
+                            <td className="value-column">{value}</td>
+                          </tr>
+                          )
+                        ))}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              )}
               <tr>
                 <td className="key-column">Booking ID</td>
                 <td className="value-column">{booking.bookingId}</td>
@@ -120,6 +147,7 @@ const BookingDetails = () => {
                   </td>
                 </tr>
               )}
+              
             </tbody>
           </table>
           <button

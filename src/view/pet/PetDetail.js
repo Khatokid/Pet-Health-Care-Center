@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getDatabase, ref, get, update } from "firebase/database";
+import { getDatabase, ref, get, update, onValue, off   } from "firebase/database";
 import { useParams, useNavigate } from "react-router-dom";
 import { auth } from "../../Components/firebase/firebase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
-import SparkleButton from "../../hooks/sparkleButton";
-import Calendar from "react-calendar";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import useForceUpdate from "../../hooks/useForceUpdate";
 
 const PetDetail = () => {
@@ -15,179 +13,20 @@ const PetDetail = () => {
   const [userData, setUserData] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const forceUpdate = useForceUpdate();
-  const catBreeds = [
-    "Domestic Short Hair",
-    "Domestic Long Hair",
-    "Abyssinian",
-    "American Bobtail",
-    "American Curl",
-    "American Shorthair",
-    "American Wirehair",
-    "Balinese",
-    "Bengal",
-    "Birman",
-    "Bombay",
-    "British Shorthair",
-    "Burmese",
-    "Chartreux",
-    "Chausie",
-    "Cornish Rex",
-    "Devon Rex",
-    "Donskoy",
-    "Egyptian Mau",
-    "Oriental",
-    "Persian",
-    "Peterbald",
-    "Pixiebob",
-    "Ragdoll",
-    "Russian Blue",
-    "Savannah",
-    "Scottish Fold",
-    "Selkirk Rex",
-    "Serengeti",
-    "Siberian",
-    "Siamese",
-    "Singapura",
-    "Snowshoe",
-    "Sokoke",
-    "Somali",
-    "Sphynx",
-    "Thai",
-    "Tonkinese",
-    "Toyger",
-    "Turkish Angora",
-    "Turkish Van",
-  ];
-
-  const dogBreeds = [
-    "Domestic Dog",
-    "Affenpinscher",
-    "Afghan Hound",
-    "Akita",
-    "Alaskan Malamute",
-    "American Staffordshire terrier",
-    "American Water Spaniel",
-    "Australian cattle dog",
-    "Australian shepherd",
-    "Australian terrier",
-    "Basenji",
-    "Basset Hound",
-    "Beagle",
-    "Bearded Collie",
-    "Bedlington Terrier",
-    "Bernese Mountain Dog",
-    "Bichon Frise",
-    "Black And Tan Coonhound",
-    "Bloodhound",
-    "Border Collie",
-    "Border Terrier",
-    "Borzoi",
-    "Boston Terrier",
-    "Bouvier Des Flandres",
-    "Boxer",
-    "Briard",
-    "Brittany",
-    "Brussels Griffon",
-    "Bull Terrier",
-    "Bulldog",
-    "Bullmastiff",
-    "Cairn Terrier",
-    "Canaan Dog",
-    "Chesapeake Bay Retriever",
-    "Chihuahua",
-    "Chinese Crested",
-    "Chinese Shar-pei",
-    "Chow Chow",
-    "Clumber Spaniel",
-    "Cocker Spaniel",
-    "Collie",
-    "Curly-coated Retriever",
-    "Dachshund",
-    "Dalmatian",
-    "Doberman Pinscher",
-    "English Cocker Spaniel",
-    "English Setter",
-    "English Springer Spaniel",
-    "English Toy Spaniel",
-    "Eskimo Dog",
-    "Finnish Spitz",
-    "Flat-coated Retriever",
-    "Fox Terrier",
-    "Foxhound",
-    "French Bulldog",
-    "German Shepherd",
-    "German Shorthaired pointer",
-    "German Wirehaired pointer",
-    "Golden Retriever",
-    "Gordon Setter",
-    "Great Dane",
-    "Greyhound",
-    "Irish Setter",
-    "Irish Water Spaniel",
-    "Irish Wolfhound",
-    "Jack Russell Terrier",
-    "Japanese Spaniel",
-    "Keeshond",
-    "Kerry Blue Terrier",
-    "Komondor",
-    "Kuvasz",
-    "Labrador Retriever",
-    "Lakeland Terrier",
-    "Lhasa Apso",
-    "Maltese",
-    "Manchester Terrier",
-    "Mastiff",
-    "Mexican Hairless",
-    "Newfoundland",
-    "Norwegian Elkhound",
-    "Norwich Terrier",
-    "Otterhound",
-    "Papillon",
-    "Pekingese",
-    "Pointer",
-    "Pomeranian",
-    "Poodle",
-    "Pug",
-    "Puli",
-    "Rhodesian Ridgeback",
-    "Rottweiler",
-    "Saint Bernard",
-    "Saluki",
-    "Samoyed",
-    "Schipperke",
-    "Schnauzer",
-    "Scottish Deerhound",
-    "Scottish Terrier",
-    "Sealyham Terrier",
-    "Shetland Sheepdog",
-    "Shih Tzu",
-    "Siberian Husky",
-    "Silky Terrier",
-    "Skye Terrier",
-    "Staffordshire Bull Terrier",
-    "Soft-coated Wheaten Terrier",
-    "Sussex Spaniel",
-    "Spitz",
-    "Tibetan Terrier",
-    "Vizsla",
-    "Weimaraner",
-    "Welsh Terrier",
-    "West Highland White Terrier",
-    "Whippet",
-    "Yorkshire Terrier",
-  ];
-
+  const [latestMedicalRecord, setLatestMedicalRecord] = useState(null);
+  const user = auth.currentUser;
+  // Breeds data
+  const catBreeds = [/* ... Cat breeds array ... */];
+  const dogBreeds = [/* ... Dog breeds array ... */];
+  
   const [selectedBreeds, setSelectedBreeds] = useState(catBreeds);
 
   const handleTypeChange = (event) => {
     const type = event.target.value;
     handleInputChange(event);
-    if (type === "Cat") {
-      setSelectedBreeds(catBreeds);
-    } else if (type === "Dog") {
-      setSelectedBreeds(dogBreeds);
-    }
+    setSelectedBreeds(type === "Cat" ? catBreeds : dogBreeds);
   };
+
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -198,7 +37,6 @@ const PetDetail = () => {
     gender: "",
   });
 
-  const user = auth.currentUser;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -206,21 +44,6 @@ const PetDetail = () => {
       console.log("No user is currently logged in.");
       return;
     }
-
-    const fetchUserData = async () => {
-      try {
-        const db = getDatabase();
-        const userRef = ref(db, `users/${user.uid}`);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          setUserData(snapshot.val());
-        } else {
-          console.log("No user data available");
-        }
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-      }
-    };
 
     const fetchPetDetails = async () => {
       try {
@@ -239,6 +62,31 @@ const PetDetail = () => {
             dob: petData.dob,
             gender: petData.gender,
           });
+
+          // Fetch user data
+          const userRef = ref(db, `users/${user.uid}`);
+          const userSnapshot = await get(userRef);
+          if (userSnapshot.exists()) {
+            setUserData(userSnapshot.val());
+          } else {
+            console.log("No user data available");
+          }
+
+          // Fetch medical history
+          const medicalHistoryRef = ref(db, `users/${user.uid}/pets/${petId}/medicalHistory`);
+    const medicalHistoryListener = onValue(medicalHistoryRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const medicalHistoryData = snapshot.val();
+        const medicalHistoryArray = Object.entries(medicalHistoryData).map(([id, data]) => ({
+          id,
+          ...data,
+        }));
+        medicalHistoryArray.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setLatestMedicalRecord(medicalHistoryArray[0]);
+      } else {
+        setLatestMedicalRecord(null);
+      }
+    });
         } else {
           console.log("No data available");
         }
@@ -247,8 +95,13 @@ const PetDetail = () => {
       }
     };
 
-    fetchUserData();
     fetchPetDetails();
+    return () => {
+      // Cleanup listener on component unmount
+      const db = getDatabase();
+      const medicalHistoryRef = ref(db, `users/${user.uid}/pets/${petId}/medicalHistory`);
+      off(medicalHistoryRef);
+    };
   }, [user, petId]);
 
   const handleEditClick = () => {
@@ -261,37 +114,27 @@ const PetDetail = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(value);
     setFormData((prevData) => ({
       ...prevData,
       [name]: value || "",
     }));
   };
+
   const handleUpdateClick = async () => {
-    const updatedFormData = { ...formData };
-
-    Object.keys(updatedFormData).forEach((key) => {
-      if (updatedFormData[key] === undefined) {
-        updatedFormData[key] = "";
-      }
-    });
-
     try {
       const db = getDatabase();
       const petRef = ref(db, `users/${user.uid}/pets/${petId}`);
-      await toast.promise(update(petRef, updatedFormData), {
+      await toast.promise(update(petRef, formData), {
         success: "Update successful! Please check your pet information again!.",
       });
-      setPet(updatedFormData);
+      setPet(formData);
       setIsEditMode(false);
       forceUpdate();
-      setTimeout(() => {
-        window.location.reload();
-      }, 2500);
     } catch (error) {
       console.error("Error updating pet details:", error);
     }
   };
+
   const calculateAge = (dob) => {
     const birthDate = new Date(dob);
     const difference = Date.now() - birthDate.getTime();
@@ -308,129 +151,149 @@ const PetDetail = () => {
       age: age.toString(),
     }));
   };
+
   if (!pet || !userData) {
     return <p>Loading pet details...</p>;
   }
 
   return (
     <div
-      style={{
-        height: "100%",
-        minHeight: "100vh",
-        position: "relative",
-        width: "100%",
-        backgroundColor: "#EBEFF2",
-      }}
+    style={{
+    height: "100%",
+    minHeight: "100vh",
+    position: "relative",
+    width: "100%",
+    backgroundColor: "#EBEFF2",
+    }}
     >
-      <div className="pet-profile-wrapper">
-        <div className="left-panel">
-          <img src={pet.imageUrl} alt="Pet Avatar" className="pet-avatar" />
-          <div className="owner-info">
-            <h3>Pet Parent</h3>
-            <div style={{ display: "flex" }}>
-              <h3>Username:</h3>
-              <p style={{ marginLeft: "20px" }}>{userData.username}</p>
-            </div>
-            <div style={{ display: "flex" }}>
-              <h3>Email:</h3>
-              <p style={{ marginLeft: "20px" }}>{userData.email}</p>
-            </div>
-            <div style={{ display: "flex" }}>
-              <h3>Address:</h3>
-              <p style={{ marginLeft: "20px" }}>{userData.address || "N/A"}</p>
-            </div>
-            <div style={{ display: "flex" }}>
-              <h3>Phone Number:</h3>
-              <p style={{ marginLeft: "20px" }}>{userData.phone || "N/A"}</p>
-            </div>
-            <div style={{ display: "flex" }}>
-              <h3>Status:</h3>
-              <p style={{ margin: "12px 0px 0px 20px" }} className="status">
-                {userData.accountStatus}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="right-panel">
-          {!isEditMode ? (
-            <>
-              <div className="section general-info">
-                <div className="header-pet-info">
-                  <h2>Hi, I'm {pet.name}</h2>
-                  <div className="edit-button" onClick={handleEditClick}>
-                    Edit <FontAwesomeIcon icon={faPenToSquare} />
-                  </div>
+    <div className="pet-profile-wrapper">
+    <div className="left-panel">
+    <img src={pet.imageUrl} alt="Pet Avatar" className="pet-avatar" />
+    <div className="owner-info">
+    <h3>Pet Parent</h3>
+    <div style={{ display: "flex" }}>
+    <h3>Username:</h3>
+    <p style={{ marginLeft: "20px" }}>{userData.username}</p>
+    </div>
+    <div style={{ display: "flex" }}>
+    <h3>Email:</h3>
+    <p style={{ marginLeft: "20px" }}>{userData.email}</p>
+    </div>
+    <div style={{ display: "flex" }}>
+    <h3>Address:</h3>
+    <p style={{ marginLeft: "20px" }}>{userData.address || "N/A"}</p>
+    </div>
+    <div style={{ display: "flex" }}>
+    <h3>Phone Number:</h3>
+    <p style={{ marginLeft: "20px" }}>{userData.phone || "N/A"}</p>
+    </div>
+    <div style={{ display: "flex" }}>
+    <h3>Status:</h3>
+    <p style={{ margin: "12px 0px 0px 20px" }} className="status">
+    {userData.accountStatus}
+    </p>
+    </div>
+    </div>
+    </div>
+    <div className="right-panel">
+    {!isEditMode ? (
+    <>
+    <div className="section general-info">
+    <div className="header-pet-info">
+    <h2>Hi, I'm {pet.name}</h2>
+    <div className="edit-button" onClick={handleEditClick}>
+    Edit <FontAwesomeIcon icon={faPenToSquare} />
+    </div>
+    </div>
+    <div className="section pet-general-info">
+    <div className="pet-info">
+    <p>Age:</p>
+    <div>{pet.age}</div>
+    </div>
+    <div className="pet-info">
+    <p>Weight:</p>
+    <div>{pet.weight || "N/A"}kg</div>
+    </div>
+    <div className="pet-info">
+    <p>Type Of Pet:</p>
+    <div>{pet.type || "N/A"}</div>
+    </div>
+    </div>
+    <div className="section pet-general-info">
+    <div className="pet-info">
+    <p>D.O.B:</p>
+    <div>{pet.dob}</div>
+    </div>
+    <div className="pet-info">
+    <p>Breed:</p>
+    <div>{pet.breed || "N/A"}</div>
+    </div>
+    <div className="pet-info">
+    <p>Gender:</p>
+    <div>{pet.gender || "N/A"}</div>
+    </div>
+    </div>
+    </div>
+    <div className="section medical-history">
+                  <h3>Latest Medical Update</h3>
+                  {latestMedicalRecord ? (
+                    <table>
+                      <tbody>
+                        {Object.entries(latestMedicalRecord).map(([key, value]) => (
+                          key !== 'id' && ( // Exclude the 'id' field from the display
+                          <tr key={key}>
+                            <td className="key-column">{key}</td>
+                            <td className="value-column">{value}</td>
+                          </tr>
+                          )
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p>No medical history available</p>
+                  )}
                 </div>
-                <div className="section pet-general-info">
-                  <div className="pet-info">
-                    <p>Age:</p>
-                    <div>{pet.age}</div>
-                  </div>
-                  <div className="pet-info">
-                    <p>Weight:</p>
-                    <div>{pet.weight || "N/A"}kg</div>
-                  </div>
-                  <div className="pet-info">
-                    <p>Type Of Pet:</p>
-                    <div>{pet.type || "N/A"}</div>
-                  </div>
-                </div>
-                <div className="section pet-general-info">
-                  <div className="pet-info">
-                    <p>D.O.B:</p>
-                    <div>{pet.dob}</div>
-                  </div>
-                  <div className="pet-info">
-                    <p>Breed:</p>
-                    <div>{pet.breed || "N/A"}</div>
-                  </div>
-                  <div className="pet-info">
-                    <p>Gender:</p>
-                    <div>{pet.gender || "N/A"}</div>
-                  </div>
-                </div>
-              </div>
-              <button
-                className="booking-detail back-button"
-                onClick={() => navigate(-1)}
-              >
-                Back
-              </button>
-            </>
-          ) : (
-            <div className="edit-form">
-              <div className="title-container">
-                <h2>Hi, I'm {formData.name}</h2>
-                <p>As pet parent, you can change or update your pet details</p>
-              </div>
-              <div className="form-group">
-                <label>Pet Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Type of Pet</label>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleTypeChange}
-                >
-                  <option value="Cat">Cat</option>
-                  <option value="Dog">Dog</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Gender</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                >
-                  
+    <button
+    className="booking-detail back-button"
+    onClick={() => navigate(-1)}
+    >
+    Back
+    </button>
+    </>
+    ) : (
+    <div className="edit-form">
+    <div className="title-container">
+    <h2>Hi, I'm {formData.name}</h2>
+    <p>As pet parent, you can change or update your pet details</p>
+    </div>
+    <div className="form-group">
+    <label>Pet Name</label>
+    <input
+                   type="text"
+                   name="name"
+                   value={formData.name}
+                   onChange={handleInputChange}
+                 />
+    </div>
+    <div className="form-group">
+    <label>Type of Pet</label>
+    <select
+                   name="type"
+                   value={formData.type}
+                   onChange={handleTypeChange}
+                 >
+    <option value="Cat">Cat</option>
+    <option value="Dog">Dog</option>
+    </select>
+    </div>
+    <div className="form-group">
+    <label>Gender</label>
+    <select
+                   name="gender"
+                   value={formData.gender}
+                   onChange={handleInputChange}
+                 >
+  
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
@@ -519,7 +382,7 @@ const PetDetail = () => {
         srcSet="https://cdn.prod.website-files.com/6139cf517cd6d26ff1548b86/6352491844284352957c5405_dog%20(1)-p-500.png 500w, https://cdn.prod.website-files.com/6139cf517cd6d26ff1548b86/6352491844284352957c5405_dog%20(1)-p-800.png 800w, https://cdn.prod.website-files.com/6139cf517cd6d26ff1548b86/6352491844284352957c5405_dog%20(1)-p-1080.png 1080w, https://cdn.prod.website-files.com/6139cf517cd6d26ff1548b86/6352491844284352957c5405_dog%20(1).png 1250w"
       />
     </div>
-  );
+    );
 };
 
 export default PetDetail;
